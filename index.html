@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Gifticle Invoice</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="invoice">
+    <div class="header">
+      <img src="Gifticle_logo_final.jpg" alt="Gifticle Logo" class="logo" />
+      <h2 class="brand">GIFTICLE</h2>
+      <p class="tagline">(Nurturing Bonds)</p>
+      <p class="phone">Phone No.: 9819723338 </p>
+    </div>
+
+    <div class="invoice-details">
+  <div><strong>Invoice:</strong> <input type="text" id="invoiceNo" value="229" /></div>
+  <div><strong>Date:</strong> <input type="date" id="invoiceDate" value="2025-05-31" /></div>
+    </div>
+
+
+    <table class="invoice-table" id="invoiceTable">
+      <thead>
+        <tr>
+          <th>Sr. No.</th>
+          <th>Description</th>
+          <th>Quantity</th>
+          <th>Rate</th>
+          <th>Amount</th>
+          <th class="no-print-column delete-header"></th>
+
+        </tr>
+      </thead>
+      <tbody id="itemsBody">
+        <tr>
+          <td>1.</td>
+          <td><input type="text" value="Customized Bags" /></td>
+          <td><input type="number" value="140" /></td>
+          <td><input type="number" value="80" /></td>
+          <td class="amount">11200</td>
+          
+        </tr>
+      </tbody>
+      <tbody id="shippingRow" style="display: none;">
+        <tr>
+          <td></td>
+          <td>Shipping</td>
+          <td></td>
+          <td></td>
+          <td class="amount"><input type="number" id="shippingAmount" value="0" /></td>
+        </tr>
+      </tbody>
+      <tbody id="taxRow" style="display: none;">
+  <tr>
+    <td></td>
+    <td>Tax</td>
+    <td></td>
+    <td></td>
+    <td class="amount"><input type="number" id="taxAmount" value="0" /></td>
+  </tr>
+</tbody>
+
+      <tfoot>
+        <tr>
+          <td colspan="4">Total</td>
+          <td id="totalAmount">12700</td>
+        </tr>
+      </tfoot>
+    </table>
+
+    <p class="amount-in-words" id="amountInWords">Rupees: Twelve thousand seven hundred only</p>
+
+    <div class="bank-details">
+      <div>
+        <p><strong>Bank details</strong></p>
+        <p><strong>SONIA GAURAV DUBEY</strong></p>
+        <p>Bank:  AXIS BANK, Dhiraj Baug, Thane (West)</p>
+        <p>Account No.: 0610101002 78409 </p>
+        <p>IFSC: UTIB0000061 </p>
+      </div>
+      <div>
+        <p><strong>For GIFTICLE</strong></p>
+        <p class="auth">Auth Signatory</p>
+        <p>Sonia Dubey</p>
+        <p>E. & O.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Controls not to be shown in PDF -->
+  <div class="no-print">
+    <button onclick="addRow()">+ Add Row</button>
+
+    <label>
+      <input type="checkbox" id="addShipping" onchange="toggleShipping()" />
+      Add Shipping
+    </label>
+    <label>
+    <input type="checkbox" id="addTax" onchange="toggleTax()" />
+    Add Tax
+    </label>
+
+
+    <div style="text-align:center; margin-top:10px;">
+      <button onclick="generatePDF()">Download PDF</button>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
