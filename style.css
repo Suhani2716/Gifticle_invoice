@@ -32,12 +32,43 @@ body {
 }
 
 .invoice-details {
-  font-family: 'Poppins', sans-serif;
+font-family: 'Poppins', sans-serif;
   margin: 20px 0;
   display: flex;
   justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  text-align: left; /* 🔥 This keeps everything left-aligned */
+}
+.invoice-details.single-column {
+  justify-content: flex-start;
 }
 
+.invoice-details input {
+  font-family: inherit;
+  font-size: 14px;
+}
+.invoice-details input,
+.invoice-details textarea {
+  text-align: left; /* 🔥 Force text input left-alignment */
+}
+.invoice-line {
+  margin: 8px 0;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.invoice-line input {
+  flex: 1;
+  border: none;
+  border-bottom: 1px solid black;
+  font-size: 16px;
+  font-family: inherit;
+  padding: 2px 4px;
+  outline: none;
+}
 
 .invoice-table {
   width: 100%;
@@ -119,5 +150,19 @@ font-family: 'Poppins', sans-serif;
     display: none !important;
   }
 }
+@media print {
+  .invoice-line {
+    display: block !important;
+    text-align: left !important;
+    width: 100% !important;
+  }
+
+  .invoice-line input {
+    display: inline-block !important;
+    width: auto !important;
+    text-align: left !important;
+  }
+}
+
 
 

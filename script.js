@@ -30,6 +30,18 @@ function toggleTax() {
   calculateTotal();
 }
 
+function toggleName() {
+  const section = document.getElementById("nameField");
+  section.style.display = document.getElementById("addName").checked ? "flex" : "none";
+}
+
+function toggleAddress() {
+  const section = document.getElementById("addressField");
+  section.style.display = document.getElementById("addAddress").checked ? "flex" : "none";
+}
+
+
+
 function attachListeners() {
   document.querySelectorAll("#itemsBody input, #shippingAmount, #taxAmount").forEach(input => {
     input.addEventListener("input", calculateTotal);
@@ -110,8 +122,8 @@ async function generatePDF() {
     cell.parentNode.removeChild(cell);
   });
 
-  // === Replace inputs with spans for clean PDF ===
-  const inputElements = invoice.querySelectorAll("input");
+  // === Replace inputs and textareas with spans for clean PDF ===
+  const inputElements = invoice.querySelectorAll("input, textarea");
   const replaced = [];
 
   inputElements.forEach(input => {
@@ -119,9 +131,20 @@ async function generatePDF() {
     span.textContent = input.value;
     span.style.display = "inline-block";
     span.style.minWidth = input.offsetWidth + "px";
-    span.style.textAlign = "center";
     span.style.fontSize = window.getComputedStyle(input).fontSize;
     span.style.padding = "4px";
+
+    // 🔥 Keep Name and Address left-aligned
+   const isLeftAlignedField = input.closest('.invoice-line') || input.id === "invoiceNo" || input.id === "invoiceDate";
+
+if (isLeftAlignedField) {
+  span.style.textAlign = "left";
+  span.style.width = "100%";
+} else {
+  span.style.textAlign = "center";
+}
+
+
     input.parentNode.replaceChild(span, input);
     replaced.push({ input, span });
   });
@@ -153,6 +176,7 @@ async function generatePDF() {
   // === Show controls again ===
   document.querySelectorAll(".no-print").forEach(el => el.style.display = "block");
 }
+
 attachListeners();
 
 

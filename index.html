@@ -18,7 +18,21 @@
     <div class="invoice-details">
   <div><strong>Invoice:</strong> <input type="text" id="invoiceNo" value="229" /></div>
   <div><strong>Date:</strong> <input type="date" id="invoiceDate" value="2025-05-31" /></div>
-    </div>
+</div>
+
+<!-- Name Field -->
+<div class="invoice-line" id="nameField" style="display: none;">
+  <strong>Name:</strong>
+  <input type="text" id="customerName" />
+</div>
+
+<!-- Address Field -->
+<div class="invoice-line" id="addressField" style="display: none;">
+  <strong>Address:</strong>
+  <input type="text" id="customerAddress" />
+</div>
+
+
 
 
     <table class="invoice-table" id="invoiceTable">
@@ -101,6 +115,17 @@
     <input type="checkbox" id="addTax" onchange="toggleTax()" />
     Add Tax
     </label>
+    <label>
+  <input type="checkbox" id="addName" onchange="toggleName()" />
+  Add Name
+</label>
+
+<label>
+  <input type="checkbox" id="addAddress" onchange="toggleAddress()" />
+  Add Address
+</label>
+
+
 
 
     <div style="text-align:center; margin-top:10px;">
