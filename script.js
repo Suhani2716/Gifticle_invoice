@@ -1,3 +1,4 @@
+// ------------------------- core row / UI functions -------------------------
 function addRow() {
   const table = document.getElementById("itemsBody");
   const row = table.insertRow();
@@ -15,7 +16,6 @@ function addRow() {
   attachListeners();
   updateRowNumbers();
 }
-
 
 function toggleShipping() {
   const checkbox = document.getElementById("addShipping");
@@ -40,8 +40,6 @@ function toggleAddress() {
   section.style.display = document.getElementById("addAddress").checked ? "flex" : "none";
 }
 
-
-
 function attachListeners() {
   document.querySelectorAll("#itemsBody input, #shippingAmount, #taxAmount").forEach(input => {
     input.addEventListener("input", calculateTotal);
@@ -60,14 +58,14 @@ function calculateTotal() {
     total += isNaN(amount) ? 0 : amount;
   });
 
-  if (document.getElementById("addShipping").checked) {
+  if (document.getElementById("addShipping")?.checked) {
     const shipping = parseFloat(document.getElementById("shippingAmount").value || 0);
     total += shipping;
   }
-  if (document.getElementById("addTax").checked) {
+  if (document.getElementById("addTax")?.checked) {
    const tax = parseFloat(document.getElementById("taxAmount").value || 0);
    total += tax;
-}
+  }
 
   document.getElementById("totalAmount").innerText = total;
   document.getElementById("amountInWords").innerText = `Rupees: ${convertToWords(total)} only`;
@@ -110,75 +108,158 @@ function updateRowNumbers() {
     row.cells[0].innerText = `${index + 1}.`;
   });
 }
-async function generatePDF() {
-  const { jsPDF } = window.jspdf;
+
+// ------------------------- Helpers for export -------------------------
+
+// Create a deep clone of the invoice, replace inputs/textareas with spans, remove controls, return clone element
+function cloneInvoiceForExport() {
   const invoice = document.getElementById("invoice");
+  const clone = invoice.cloneNode(true);
 
-  // Hide controls
-  document.querySelectorAll(".no-print").forEach(el => el.style.display = "none");
+  // Remove or hide elements with class 'no-print' inside clone
+  clone.querySelectorAll(".no-print").forEach(el => el.remove());
 
-  // === Remove delete columns before rendering ===
-  const deletedCells = [];
-  document.querySelectorAll(".delete-cell, .delete-header").forEach(cell => {
-    deletedCells.push({ cell, parent: cell.parentNode });
-    cell.parentNode.removeChild(cell);
-  });
+  // Remove delete columns/headers inside clone
+  clone.querySelectorAll(".delete-cell, .delete-header, .no-print-column").forEach(el => el.remove());
 
-  // === Replace inputs and textareas with spans for clean PDF ===
-  const inputElements = invoice.querySelectorAll("input, textarea");
-  const replaced = [];
-
-  inputElements.forEach(input => {
+  // Replace inputs and textareas with spans preserving simple sizing
+  clone.querySelectorAll("input, textarea").forEach(input => {
     const span = document.createElement("span");
     span.textContent = input.value;
     span.style.display = "inline-block";
-    span.style.minWidth = input.offsetWidth + "px";
-    span.style.fontSize = window.getComputedStyle(input).fontSize;
-    span.style.padding = "4px";
-
-    // 🔥 Keep Name and Address left-aligned
-   const isLeftAlignedField = input.closest('.invoice-line') || input.id === "invoiceNo" || input.id === "invoiceDate";
-
-if (isLeftAlignedField) {
-  span.style.textAlign = "left";
-  span.style.width = "100%";
-} else {
-  span.style.textAlign = "center";
-}
-
-
+    span.style.minWidth = (input.offsetWidth || 60) + "px";
+    span.style.fontSize = window.getComputedStyle(input).fontSize || "14px";
+    span.style.padding = "2px 4px";
+    // preserve block style for typical left-aligned fields
+    if (input.tagName.toLowerCase() === "textarea" || input.style.display === "block") {
+      span.style.display = "block";
+      span.style.width = "100%";
+    }
     input.parentNode.replaceChild(span, input);
-    replaced.push({ input, span });
   });
 
-  // === Capture PDF ===
-  const canvas = await html2canvas(invoice, { scale: 2 });
-  const imgData = canvas.toDataURL("image/png");
-  const pdf = new jsPDF("p", "pt", "a4");
-
-  const imgProps = pdf.getImageProperties(imgData);
-  const pdfWidth = pdf.internal.pageSize.getWidth();
-  const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-
-  pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
-
-  const invNo = document.getElementById("invoiceNo")?.value || "Invoice";
-  pdf.save(`Gifticle_Invoice_${invNo}.pdf`);
-
-  // === Restore inputs ===
-  replaced.forEach(({ input, span }) => {
-    span.parentNode.replaceChild(input, span);
-  });
-
-  // === Restore delete columns ===
-  deletedCells.forEach(({ cell, parent }) => {
-    parent.appendChild(cell);
-  });
-
-  // === Show controls again ===
-  document.querySelectorAll(".no-print").forEach(el => el.style.display = "block");
+  return clone;
 }
 
+// download blob helper
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 10000);
+}
+
+// ------------------------- PDF + Share + Word functions -------------------------
+
+// generate PDF and download as Blob (shareable)
+async function generatePDF() {
+  // Read invoice number first
+  const invNoInput = document.getElementById("invoiceNo");
+  const invNo = (invNoInput && invNoInput.value.trim()) ? invNoInput.value.trim() : "Invoice";
+
+  // Prepare clone for export then render with html2canvas
+  const clone = cloneInvoiceForExport();
+  clone.style.position = "fixed";
+  clone.style.left = "-10000px";
+  clone.style.top = "0";
+  document.body.appendChild(clone);
+
+  try {
+    const canvas = await html2canvas(clone, { scale: 2, useCORS: true, logging: false });
+    const imgData = canvas.toDataURL("image/png");
+
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF("p", "pt", "a4");
+    const imgProps = pdf.getImageProperties(imgData);
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+    pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+
+    // Output a real blob so file can be shared/opened normally
+    const blob = pdf.output("blob");
+    const filename = `Gifticle_Invoice_${invNo}.pdf`;
+    downloadBlob(blob, filename);
+  } catch (err) {
+    console.error("PDF generation error:", err);
+    alert("Error generating PDF. See console for details.");
+  } finally {
+    clone.remove();
+  }
+}
+
+// try to share a PDF using Web Share API (fallback to download)
+async function sharePDF() {
+  // Read invoice number first
+  const invNoInput = document.getElementById("invoiceNo");
+  const invNo = (invNoInput && invNoInput.value.trim()) ? invNoInput.value.trim() : "Invoice";
+
+  const clone = cloneInvoiceForExport();
+  clone.style.position = "fixed";
+  clone.style.left = "-10000px";
+  clone.style.top = "0";
+  document.body.appendChild(clone);
+
+  try {
+    const canvas = await html2canvas(clone, { scale: 2, useCORS: true, logging: false });
+    const imgData = canvas.toDataURL("image/png");
+
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF("p", "pt", "a4");
+    const imgProps = pdf.getImageProperties(imgData);
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+    pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+
+    const blob = pdf.output("blob");
+    const filename = `Gifticle_Invoice_${invNo}.pdf`;
+    const file = new File([blob], filename, { type: "application/pdf" });
+
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({ files: [file], title: filename });
+      } catch (err) {
+        console.warn("User cancelled share or share failed:", err);
+        // fallback to download
+        downloadBlob(blob, filename);
+      }
+    } else {
+      // Not supported -> download instead
+      downloadBlob(blob, filename);
+      alert("Sharing not supported in this browser — PDF downloaded instead.");
+    }
+  } catch (err) {
+    console.error("sharePDF error:", err);
+    alert("Could not prepare PDF for sharing. See console for details.");
+  } finally {
+    clone.remove();
+  }
+}
+
+// Download as Word (.doc) — wraps clone HTML in a minimal Word-compatible wrapper
+function downloadWord() {
+  // Read invoice number first
+  const invNoInput = document.getElementById("invoiceNo");
+  const invNo = (invNoInput && invNoInput.value.trim()) ? invNoInput.value.trim() : "Invoice";
+
+  const clone = cloneInvoiceForExport();
+
+  // Build Word-compatible HTML content
+  const header = "<html xmlns:o='urn:schemas-microsoft-com:office:office' " +
+    "xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>" +
+    "<head><meta charset='utf-8'><title>Invoice</title></head><body>";
+  const footer = "</body></html>";
+  const html = header + clone.innerHTML + footer;
+
+  const blob = new Blob(['\ufeff', html], { type: 'application/msword' });
+  const filename = `Gifticle_Invoice_${invNo}.doc`;
+  downloadBlob(blob, filename);
+  clone.remove();
+}
+
+// ------------------------- initialize listeners -------------------------
 attachListeners();
-
-
