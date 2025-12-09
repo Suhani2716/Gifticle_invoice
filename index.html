@@ -6,35 +6,35 @@
   <title>Gifticle Invoice</title>
   <link rel="stylesheet" href="style.css" />
 </head>
+
 <body>
   <div id="invoice">
     <div class="header">
       <img src="Gifticle_logo_final.jpg" alt="Gifticle Logo" class="logo" />
       <h2 class="brand">GIFTICLE</h2>
       <p class="tagline">(Nurturing Bonds)</p>
-      <p class="phone">Phone No.: 9819723338 </p>
+      <p class="phone">Phone No.: 9819723338</p>
     </div>
 
+    <!-- Invoice Number and Date -->
     <div class="invoice-details">
-  <div><strong>Invoice:</strong> <input type="text" id="invoiceNo" value="229" /></div>
-  <div><strong>Date:</strong> <input type="date" id="invoiceDate" value="2025-05-31" /></div>
-</div>
+      <div><strong>Invoice:</strong> <input type="text" id="invoiceNo" value="229" /></div>
+      <div><strong>Date:</strong> <input type="date" id="invoiceDate" value="2025-05-31" /></div>
+    </div>
 
-<!-- Name Field -->
-<div class="invoice-line" id="nameField" style="display: none;">
-  <strong>Name:</strong>
-  <input type="text" id="customerName" />
-</div>
+    <!-- Optional Name Field -->
+    <div class="invoice-line" id="nameField" style="display: none;">
+      <strong>Name:</strong>
+      <input type="text" id="customerName" />
+    </div>
 
-<!-- Address Field -->
-<div class="invoice-line" id="addressField" style="display: none;">
-  <strong>Address:</strong>
-  <input type="text" id="customerAddress" />
-</div>
+    <!-- Optional Address Field -->
+    <div class="invoice-line" id="addressField" style="display: none;">
+      <strong>Address:</strong>
+      <input type="text" id="customerAddress" />
+    </div>
 
-
-
-
+    <!-- Invoice Table -->
     <table class="invoice-table" id="invoiceTable">
       <thead>
         <tr>
@@ -44,9 +44,9 @@
           <th>Rate</th>
           <th>Amount</th>
           <th class="no-print-column delete-header"></th>
-
         </tr>
       </thead>
+
       <tbody id="itemsBody">
         <tr>
           <td>1.</td>
@@ -54,9 +54,13 @@
           <td><input type="number" value="140" /></td>
           <td><input type="number" value="80" /></td>
           <td class="amount">11200</td>
-          
+          <td class="no-print-column delete-cell">
+            <button class="delete-btn" onclick="deleteRow(this)">🗑️</button>
+          </td>
         </tr>
       </tbody>
+
+      <!-- Shipping Row -->
       <tbody id="shippingRow" style="display: none;">
         <tr>
           <td></td>
@@ -66,15 +70,17 @@
           <td class="amount"><input type="number" id="shippingAmount" value="0" /></td>
         </tr>
       </tbody>
+
+      <!-- Tax Row -->
       <tbody id="taxRow" style="display: none;">
-  <tr>
-    <td></td>
-    <td>Tax</td>
-    <td></td>
-    <td></td>
-    <td class="amount"><input type="number" id="taxAmount" value="0" /></td>
-  </tr>
-</tbody>
+        <tr>
+          <td></td>
+          <td>Tax</td>
+          <td></td>
+          <td></td>
+          <td class="amount"><input type="number" id="taxAmount" value="0" /></td>
+        </tr>
+      </tbody>
 
       <tfoot>
         <tr>
@@ -84,15 +90,18 @@
       </tfoot>
     </table>
 
-    <p class="amount-in-words" id="amountInWords">Rupees: Twelve thousand seven hundred only</p>
+    <p class="amount-in-words" id="amountInWords">
+      Rupees: Twelve thousand seven hundred only
+    </p>
 
+    <!-- Bank Details -->
     <div class="bank-details">
       <div>
         <p><strong>Bank details</strong></p>
         <p><strong>SONIA GAURAV DUBEY</strong></p>
-        <p>Bank:  AXIS BANK, Dhiraj Baug, Thane (West)</p>
-        <p>Account No.: 0610101002 78409 </p>
-        <p>IFSC: UTIB0000061 </p>
+        <p>Bank: AXIS BANK, Dhiraj Baug, Thane (West)</p>
+        <p>Account No.: 0610101002 78409</p>
+        <p>IFSC: UTIB0000061</p>
       </div>
       <div>
         <p><strong>For GIFTICLE</strong></p>
@@ -103,38 +112,34 @@
     </div>
   </div>
 
-  <!-- Controls not to be shown in PDF -->
-  <div class="no-print">
+  <!-- -------------------------------------------------------- -->
+  <!-- CONTROLS (Not Included in PDF) -->
+  <!-- -------------------------------------------------------- -->
+  <div class="no-print" style="margin-top: 20px; text-align: center;">
+
     <button onclick="addRow()">+ Add Row</button>
 
-    <label>
-      <input type="checkbox" id="addShipping" onchange="toggleShipping()" />
-      Add Shipping
-    </label>
-    <label>
-    <input type="checkbox" id="addTax" onchange="toggleTax()" />
-    Add Tax
-    </label>
-    <label>
-  <input type="checkbox" id="addName" onchange="toggleName()" />
-  Add Name
-</label>
+    <label><input type="checkbox" id="addShipping" onchange="toggleShipping()"> Add Shipping</label>
 
-<label>
-  <input type="checkbox" id="addAddress" onchange="toggleAddress()" />
-  Add Address
-</label>
+    <label><input type="checkbox" id="addTax" onchange="toggleTax()"> Add Tax</label>
 
+    <label><input type="checkbox" id="addName" onchange="toggleName()"> Add Name</label>
 
+    <label><input type="checkbox" id="addAddress" onchange="toggleAddress()"> Add Address</label>
 
+    <hr style="margin: 15px auto; width: 60%;">
 
-    <div style="text-align:center; margin-top:10px;">
-      <button onclick="generatePDF()">Download PDF</button>
-    </div>
+    <!-- ACTION BUTTONS -->
+    <button onclick="generatePDF()">Download PDF</button>
+    <button onclick="sharePDF()">Share PDF</button>
+    <button onclick="downloadWord()">Download .doc</button>
+
   </div>
 
+  <!-- Scripts -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="script.js"></script>
+
 </body>
 </html>
