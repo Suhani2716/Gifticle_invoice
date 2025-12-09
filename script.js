@@ -93,7 +93,9 @@ function convertToWords(num) {
     return "amount too large";
   }
 
-  return inWords(num).replace(/\b\w/g, l => l.toUpperCase());
+  // Guard: ensure integer
+  const intNum = Math.round(Number(num) || 0);
+  return inWords(intNum).replace(/\b\w/g, l => l.toUpperCase());
 }
 function deleteRow(button) {
   const row = button.parentElement.parentElement;
@@ -153,13 +155,41 @@ function downloadBlob(blob, filename) {
   setTimeout(() => URL.revokeObjectURL(url), 10000);
 }
 
+// ------------------------- Invoice auto-number (localStorage) -------------------------
+
+const DEFAULT_LAST_INVOICE = 253; // assumed last invoice if none saved
+
+function initInvoiceNumber() {
+  // If user already set a number (editing manually before DOMContentLoaded), we won't overwrite.
+  const input = document.getElementById("invoiceNo");
+  if (!input) return;
+
+  const stored = parseInt(localStorage.getItem('lastInvoice'), 10);
+  const last = Number.isInteger(stored) ? stored : DEFAULT_LAST_INVOICE;
+  const next = last + 1;
+
+  // Only set default if input is empty
+  if (!input.value || input.value.trim() === "") {
+    input.value = String(next);
+  }
+}
+
+// Save the invoice number you used (if numeric) so next auto value continues from it
+function saveInvoiceNumberIfNumeric(invNo) {
+  const n = parseInt(invNo, 10);
+  if (!isNaN(n)) {
+    localStorage.setItem('lastInvoice', String(n));
+  }
+}
+
 // ------------------------- PDF + Share + Word functions -------------------------
 
 // generate PDF and download as Blob (shareable)
 async function generatePDF() {
   // Read invoice number first
   const invNoInput = document.getElementById("invoiceNo");
-  const invNo = (invNoInput && invNoInput.value.trim()) ? invNoInput.value.trim() : "Invoice";
+  const invNoRaw = (invNoInput && invNoInput.value.trim()) ? invNoInput.value.trim() : "Invoice";
+  const invNoForFilename = invNoRaw.replace(/\s+/g, '_');
 
   // Prepare clone for export then render with html2canvas
   const clone = cloneInvoiceForExport();
@@ -182,8 +212,12 @@ async function generatePDF() {
 
     // Output a real blob so file can be shared/opened normally
     const blob = pdf.output("blob");
-    const filename = `Gifticle_Invoice_${invNo}.pdf`;
+    const filename = `Gifticle_Invoice_${invNoForFilename}.pdf`;
     downloadBlob(blob, filename);
+
+    // Save the invoice number we used (so next default continues from this)
+    // If the invoice number is numeric, save it. If not numeric, we skip saving to avoid corrupting numeric sequence.
+    saveInvoiceNumberIfNumeric(invNoRaw);
   } catch (err) {
     console.error("PDF generation error:", err);
     alert("Error generating PDF. See console for details.");
@@ -196,7 +230,8 @@ async function generatePDF() {
 async function sharePDF() {
   // Read invoice number first
   const invNoInput = document.getElementById("invoiceNo");
-  const invNo = (invNoInput && invNoInput.value.trim()) ? invNoInput.value.trim() : "Invoice";
+  const invNoRaw = (invNoInput && invNoInput.value.trim()) ? invNoInput.value.trim() : "Invoice";
+  const invNoForFilename = invNoRaw.replace(/\s+/g, '_');
 
   const clone = cloneInvoiceForExport();
   clone.style.position = "fixed";
@@ -216,20 +251,24 @@ async function sharePDF() {
     pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
 
     const blob = pdf.output("blob");
-    const filename = `Gifticle_Invoice_${invNo}.pdf`;
+    const filename = `Gifticle_Invoice_${invNoForFilename}.pdf`;
     const file = new File([blob], filename, { type: "application/pdf" });
 
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
       try {
         await navigator.share({ files: [file], title: filename });
+        // On successful share, save invoice number too
+        saveInvoiceNumberIfNumeric(invNoRaw);
       } catch (err) {
         console.warn("User cancelled share or share failed:", err);
         // fallback to download
         downloadBlob(blob, filename);
+        saveInvoiceNumberIfNumeric(invNoRaw);
       }
     } else {
       // Not supported -> download instead
       downloadBlob(blob, filename);
+      saveInvoiceNumberIfNumeric(invNoRaw);
       alert("Sharing not supported in this browser — PDF downloaded instead.");
     }
   } catch (err) {
@@ -244,7 +283,8 @@ async function sharePDF() {
 function downloadWord() {
   // Read invoice number first
   const invNoInput = document.getElementById("invoiceNo");
-  const invNo = (invNoInput && invNoInput.value.trim()) ? invNoInput.value.trim() : "Invoice";
+  const invNoRaw = (invNoInput && invNoInput.value.trim()) ? invNoInput.value.trim() : "Invoice";
+  const invNoForFilename = invNoRaw.replace(/\s+/g, '_');
 
   const clone = cloneInvoiceForExport();
 
@@ -256,10 +296,17 @@ function downloadWord() {
   const html = header + clone.innerHTML + footer;
 
   const blob = new Blob(['\ufeff', html], { type: 'application/msword' });
-  const filename = `Gifticle_Invoice_${invNo}.doc`;
+  const filename = `Gifticle_Invoice_${invNoForFilename}.doc`;
   downloadBlob(blob, filename);
+
+  // Save numeric invoice if applicable
+  saveInvoiceNumberIfNumeric(invNoRaw);
+
   clone.remove();
 }
 
-// ------------------------- initialize listeners -------------------------
-attachListeners();
+// ------------------------- initialize listeners & defaults -------------------------
+document.addEventListener("DOMContentLoaded", () => {
+  initInvoiceNumber();
+  attachListeners();
+});
